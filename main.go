@@ -1,25 +1,17 @@
 package main
 
 import (
-	"encoding/csv"
+	"amazon-scraper-go/helper"
+	"amazon-scraper-go/model"
 	"fmt"
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/extensions"
+	"github.com/joho/godotenv"
 	"log"
 	"net/url"
 	"os"
 	"time"
 )
-
-type Product struct {
-	title        string
-	currentPrice string
-	oldPrice     string
-	url          string
-	discountType string
-}
-
-type Products []Product
 
 var searchList = []string{
 	"notebook",
@@ -31,7 +23,7 @@ const pageLimit = 5
 
 func startCrawl() {
 
-	var products []Product
+	var products []model.Product
 
 	c := colly.NewCollector(colly.Async(true))
 
@@ -51,22 +43,24 @@ func startCrawl() {
 
 	c.OnHTML("div.s-main-slot.s-result-list.s-search-results.sg-row", func(element *colly.HTMLElement) {
 		element.ForEach("div.a-section.a-spacing-medium", func(_ int, element *colly.HTMLElement) {
-			temp := Product{}
-			temp.title = element.ChildText("span .a-size-base-plus.a-color-base.a-text-normal")
-			temp.currentPrice = element.ChildText("span[data-a-color='base'] .a-offscreen")
-			temp.oldPrice = element.ChildText("span[data-a-color='secondary'] .a-offscreen")
-			temp.discountType = element.ChildText("span[data-a-badge-type='deal']")
+			temp := model.Product{}
+			temp.Title = element.ChildText("span .a-size-base-plus.a-color-base.a-text-normal")
+			temp.CurrentPrice = element.ChildText("span[data-a-color='base'] .a-offscreen")
+			temp.OldPrice = element.ChildText("span[data-a-color='secondary'] .a-offscreen")
+			temp.DiscountType = element.ChildText("span[data-a-badge-type='deal']")
 			var slug, _ = element.DOM.Find(".a-link-normal.a-text-normal").Attr("href")
 
 			if slug != "" {
-				temp.url = fmt.Sprintf("%s%s", domain, slug)
+				temp.Url = fmt.Sprintf("%s%s", domain, slug)
 			}
 
-			if temp.title == "" || temp.currentPrice == "" || temp.discountType == "" {
+			if temp.Title == "" {
 				return
 			}
 
-			products = append(products, temp)
+			if temp.DiscountType != "" {
+				products = append(products, temp)
+			}
 		})
 	})
 
@@ -80,26 +74,23 @@ func startCrawl() {
 
 	c.Wait()
 
-	exportCSV(products)
-}
+	//helper.ExportCSV(products)
 
-func exportCSV(products Products) {
-	file, err := os.Create("results.csv")
-	defer file.Close()
-	if err != nil {
-		log.Fatalln("Failed to open file!", err)
-	}
-	w := csv.NewWriter(file)
-	defer w.Flush()
+	currentTime := time.Now().Local()
+	subject := "Deal Scraper Report | " + currentTime.Format("2006-01-02 15:04:05")
+	to:= os.Getenv("EMAIL_TO")
+	from := os.Getenv("EMAIL_FROM")
+	toName := "Atakan"
+	fromName := "Deal Scraper"
+	r := helper.NewMail(to, toName, from, fromName, subject)
 
-	var data [][]string
-	for _, product := range products {
-		row := []string{product.title, product.url, product.oldPrice, product.currentPrice}
-		data = append(data, row)
-	}
-	w.WriteAll(data)
+	r.Send("static/templates/mail.html", products)
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	startCrawl()
 }

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>Title</title>
+</head>
+<body>
+<table>
+    <tr style="border: 1px solid black;">
+        <th style="border: 1px solid black;">Title</th>
+        <th style="border: 1px solid black;">Discount Type</th>
+        <th style="border: 1px solid black;">Old Price</th>
+        <th style="border: 1px solid black;">Current Price</th>
+    </tr>
+    {{range $val := .}}
+    <tr style="border: 1px solid black;">
+        <th style="border: 1px solid black;"><a href="{{$val.Url}}">{{$val.Title}}</a></th>
+        <th style="border: 1px solid black;">{{$val.DiscountType}}</th>
+        <th style="border: 1px solid black;">{{$val.OldPrice}}</th>
+        <th style="border: 1px solid black;">{{$val.CurrentPrice}}</th>
+    </tr>
+    {{end}}
+</table>
+</body>
+</html>
