@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"regexp"
 	"time"
 )
 
@@ -18,6 +19,7 @@ var searchList = []string{
 	"gaming mouse",
 }
 
+const projectDirName = "amazon-scraper-go"
 const domain = "https://www.amazon.com.tr"
 const pageLimit = 5
 
@@ -88,7 +90,12 @@ func startCrawl() {
 }
 
 func main() {
-	err := godotenv.Load()
+	projectName := regexp.MustCompile(`^(.*` + projectDirName + `)`)
+	currentWorkDirectory, _ := os.Getwd()
+	rootPath := projectName.Find([]byte(currentWorkDirectory))
+
+	err := godotenv.Load(string(rootPath) + `/.env`)
+	err = godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
