@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -45,8 +46,8 @@ func startCrawl() {
 		element.ForEach("div.a-section.a-spacing-medium", func(_ int, element *colly.HTMLElement) {
 			temp := model.Product{}
 			temp.Title = element.ChildText("span .a-size-base-plus.a-color-base.a-text-normal")
-			temp.CurrentPrice = element.ChildText("span[data-a-color='base'] .a-offscreen")
-			temp.OldPrice = element.ChildText("span[data-a-color='secondary'] .a-offscreen")
+			temp.CurrentPrice = helper.FormatPrice(element.ChildText("span[data-a-color='base'] .a-offscreen"))
+			temp.OldPrice = helper.FormatPrice(element.ChildText("span[data-a-color='secondary'] .a-offscreen"))
 			temp.DiscountType = element.ChildText("span[data-a-badge-type='deal']")
 			var slug, _ = element.DOM.Find(".a-link-normal.a-text-normal").Attr("href")
 
@@ -76,9 +77,14 @@ func startCrawl() {
 
 	//helper.ExportCSV(products)
 
+	// sort
+	sort.Slice(products, func(p, q int) bool {
+		return products[p].CurrentPrice > products[q].CurrentPrice
+	})
+
 	currentTime := time.Now().Local()
 	subject := "Deal Scraper Report | " + currentTime.Format("2006-01-02 15:04:05")
-	to:= os.Getenv("EMAIL_TO")
+	to := os.Getenv("EMAIL_TO")
 	from := os.Getenv("EMAIL_FROM")
 	toName := "Atakan"
 	fromName := "Deal Scraper"
