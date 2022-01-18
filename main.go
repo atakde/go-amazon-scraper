@@ -19,7 +19,7 @@ var searchList = []string{
 	"gaming mouse",
 }
 
-const domain = "https://www.amazon.com.tr"
+const domain = "https://www.amazon.com"
 const pageLimit = 5
 
 func startCrawl() {
